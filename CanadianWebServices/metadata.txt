@@ -9,6 +9,7 @@
 [general]
 name=Canadian Web Services
 qgisMinimumVersion=2.0
+qgisMaximumVersion=2.99
 description=This plugin provides easy access to many geospatial web services in the Canadian (.ca) domain.
 version=0.1
 author=Nathan Torrence
