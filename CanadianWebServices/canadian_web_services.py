@@ -22,6 +22,7 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication,QRectF,Qt,QEvent
 from PyQt4.QtGui import QAction, QIcon,QTableWidgetItem,QMessageBox,QHeaderView,QFont,QWidget,QTextCursor,QAbstractItemView
+
 # Initialize Qt resources from file resources.py
 import resources
 # Import the code for the dialog
@@ -31,18 +32,153 @@ from info_dialog import InfoDialog
 from service_class import ServiceObject
 # contains functions to help load in map servers:
 import mapServerHelp
+
 # Library of functions to help with the loading in of OGC web services:
 from owslib.wms import WebMapService
-from owslib.wfs import WebFeatureService
+from owslib.wfs import WebFeatureService 
 from owslib.wmts import WebMapTileService
-import os.path
+import os # path
 import json, requests
 import urllib2, re
 from qgis.gui import *
-from qgis.core import *
+from qgis.core import QgsMapLayerRegistry, QgsRasterLayer, QgsVectorLayer
+
+# Library of functions to help save layers in registry  for QGIS 3 change _winreg to winreg
+from _winreg import *
+
 import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
+
+'''
+	Standalone function that saves services into the registry
+	@param title - The title of the service
+	@param url - the url of the service
+	@param type - the type of service (ie WMS,WFS,ESRI MapServer)
+'''
+def saveLayers(title,url,type):
+
+	#Following block creates and sets authentication settings for chosen service 
+	##########################################################################################################################
+	val = "" # will hold path to key for service
+	try: # try block checks to see if the required keys have already been made
+		if(type == "WMS" or type == "WFS"):
+			val = "Software\\QGIS\\QGIS2\\Qgis\\"+type
+			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS) 
+		elif (type == "ESRI MapServer"):
+			val = "Software\\QGIS\\QGIS2\\Qgis\\ARCGISMAPSERVER"
+			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
+	except: # If the key has not been made already, create it and open the newly created key
+		temp = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS) # opens up the parent directory of the key we tried to make
+		if(type == "WMS" or type == "WFS"):
+			CreateKey(temp,type)
+			val = "Software\\QGIS\\QGIS2\\Qgis\\"+type
+			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
+		elif (type == "ESRI MapServer"):
+			CreateKey(temp,"ARCGISMAPSERVER")
+			val = "Software\\QGIS\\QGIS2\\Qgis\\ARCGISMAPSERVER"
+			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
+	
+	try: # Checks if key for service has already been created
+		key = OpenKey(HKEY_CURRENT_USER,val+"\\"+title,0,KEY_WRITE)
+	except: # if not create the key and open it, allowing us write using it 
+		CreateKey(security_key,title)
+		key = OpenKey(HKEY_CURRENT_USER,val+"\\"+title,0,KEY_WRITE)
+
+	# Setting values of services to default settings
+	SetValueEx(key,"authcfg",0,REG_SZ,"")
+	SetValueEx(key,"password",0,REG_SZ,"")
+	SetValueEx(key,"username",0,REG_SZ,"")
+	
+	# Closing connections to registry
+	CloseKey(security_key)
+	CloseKey(key)
+	
+	##########################################################################################################################
+	
+	if(type == "WMS"):
+		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-wms" # Value of base key
+		
+		try: # try block checks if the folder has already been created in the registry, if not creates it 
+			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		except:
+				temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
+				CreateKey(temp_key,"connections-wms")
+				host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		
+		try: # checks if service has already been added, if not adds it to registry with default settings
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+		except:
+			CreateKey(host_key,title) 
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE) 
+		
+		#Generating default settings for key 
+		SetValueEx(key,"dpiMode",0,REG_DWORD,7)
+		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
+		SetValueEx(key,"ignoreGetFeatureInfoURI",0,REG_SZ,"false")
+		SetValueEx(key,"ignoreGetMapURI",0,REG_SZ,"false")
+		SetValueEx(key,"invertAxisOrientation",0,REG_SZ,"false")
+		SetValueEx(key,"referer",0,REG_SZ,"")
+		SetValueEx(key,"smoothPixmap Transform",0,REG_SZ,"false")
+		SetValueEx(key,"url",0,REG_SZ,url)
+
+		# Closing connections to registry
+		CloseKey(key) 
+		CloseKey(host_key) 
+		
+	elif (type == "WFS"):
+		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-wfs"
+		
+		try: # try block checks if the folder has already been created in the registry, if not creates it 
+			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		except:
+			temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
+			CreateKey(temp_key,"connections-wfs")
+			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		
+		try:  # checks if service has already been added, if not adds it to registry with default settings
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+		except:
+			CreateKey(host_key,title)
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+		
+		#Generating default settings for key
+		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
+		SetValueEx(key,"invertAxisOrientation",0,REG_SZ,"false")
+		SetValueEx(key,"maxnumfeatures",0,REG_SZ,"")
+		SetValueEx(key,"referer",0,REG_SZ,"")
+		SetValueEx(key,"url",0,REG_SZ,url)
+		SetValueEx(key,"version",0,REG_SZ,"auto")
+		
+		# Closing connections to registry
+		CloseKey(key)
+		CloseKey(host_key)
+	
+	elif (type == "ESRI MapServer"):
+		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-arcgismapserver"
+		
+		try: # try block checks if the folder has already been created in the registry, if not creates it 
+			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		except:
+			temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
+			CreateKey(temp_key,"connections-arcgismapserver")
+
+			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+		
+		try:  # checks if service has already been added, if not adds it to registry with default settings
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+		except:
+			CreateKey(host_key,title)
+			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+		
+		#Generating default settings for key
+		SetValueEx(key,"referer",0,REG_SZ,"")
+		SetValueEx(key,"url",0,REG_SZ,url)
+		
+		# Closing connections to registry
+		CloseKey(key)
+		CloseKey(host_key)
+	 
 
 class CanadianWebServices:
     """QGIS Plugin Implementation."""
@@ -202,7 +338,7 @@ class CanadianWebServices:
 
     ## unload(self) removes the plugin from QGIS GUI
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+        """Removes the plugin menu item and icon from QGIS GUI.""" 
         for action in self.actions:
             self.iface.removePluginWebMenu(
                 self.tr(u'&Canadian Web Services'),
@@ -227,13 +363,14 @@ class CanadianWebServices:
         serv = self.getSelectedService()
         desc = serv.desc
         name = serv.name
-        
+       
         # update the description:
         self.dlg.textEdit.clear()
         cursor = QTextCursor(self.dlg.textEdit.document())
         cursor.insertText(name + "\n\n" + desc)
     
-        self.dlg.textEdit.setReadOnly(True)    
+        self.dlg.textEdit.setReadOnly(True)
+			
         
     # percentUp(self, up, down): returns the percent up time using up and down times
     # percentUp: CWS Float Float -> Int
@@ -257,7 +394,7 @@ class CanadianWebServices:
             json_test = response.json()
         except:
             self.works = False # this will be used in the run method to check if the url works
-                               # if it doesnt, an error message will appear on startup and the program will close
+                               # if it doesn't, an error message will appear on startup and the program will close
             return list()
             
         if self.works == True:
@@ -277,7 +414,7 @@ class CanadianWebServices:
                 downWeek = float((availability['week'])['hoursDown'])
                 perAvailable = self.percentUp(upWeek, downWeek) # to only include services with a high percent up time
                 serviceType = service['serviceInterfaceType'] # to exclude WMTS services from being included
-                if service['title'] != "" and numLayers <= 20 and perAvailable >= 90 and serviceType != "WMTS":
+                if service['title'] != "" and numLayers <= 20 and perAvailable >= 90 and serviceType != 'WMTS':
                     # if its a good enough service, get the other fields and add it to the list
                     desc = service['abstract']
                     if serviceType == "ESRI_MapServer":
@@ -298,10 +435,10 @@ class CanadianWebServices:
     # setTableWidgetBehaviour: CWS -> None
     def setTableWidgetBehaviour(self):
         # set row and column sizes and lock them
-        self.dlg.tableWidget.setColumnWidth(0, 110)
-        self.dlg.tableWidget.setColumnWidth(1, 110)
-        self.dlg.tableWidget.setColumnWidth(2, 207)
-        self.dlg.tableWidget.setColumnWidth(3, 86)
+        self.dlg.tableWidget.setColumnWidth(0, 110) # Name/Title
+        self.dlg.tableWidget.setColumnWidth(1, 110) # Type
+        self.dlg.tableWidget.setColumnWidth(2, 207) # Host 
+        self.dlg.tableWidget.setColumnWidth(3, 86)  # number of layers
         self.dlg.tableWidget.horizontalHeader().setResizeMode(QHeaderView.Fixed)
         self.dlg.tableWidget.verticalHeader().setResizeMode(QHeaderView.Fixed)
         
@@ -383,7 +520,9 @@ class CanadianWebServices:
     # Modifies: table is filled with sorted version of self.shownServices
     def sortCurrentServices(self):
         # used for the sortCombo box because it can only take one parameter and will always use shownDatasets
-        return self.sortServices(self.shownServices)    
+        return self.sortServices(self.shownServices)
+		
+
     
     # loadWebService(self): loads the selected service into the map layer by layer. If any layer
     #                       is not valid, a warning message will be displayed to the user
@@ -401,40 +540,45 @@ class CanadianWebServices:
         serviceErrors = False # will become true if any of the layers cannot load in
         
         if servType == "WMS":
-
-            service_url = service_url[:-36] # simple way of removing the GetCapabilities request
-            wms = WebMapService(service_url) 
-            layerList = list(wms.contents) # creates a list of the names of each layer in the service
-            numLayers = len(layerList)
+			
+			service_url = service_url[:-36] # simple way of removing the GetCapabilities request
+			saveLayers(name,service_url,servType)
+			wms = WebMapService(service_url) 
+			layerList = list(wms.contents) # creates a list of the names of each layer in the service
+			numLayers = len(layerList)
             
-            for layer in range(numLayers):
+			for layer in range(numLayers):
                 # construct a WMS url for the current layer
-                urlWithParams1 = 'url='+str(service_url)+'&format=image/png&layers='
-                urlWithParams2 = '&styles=&crs=EPSG:'+str(EPSG_code)
-                urlWithParams = urlWithParams1 + layerList[layer] + urlWithParams2
+				urlWithParams1 = 'url='+str(service_url)+'&format=image/png&layers='
+				urlWithParams2 = '&styles=&crs=EPSG:'+str(EPSG_code)
+				urlWithParams = urlWithParams1 + layerList[layer] + urlWithParams2
                 # create the layer and add it to the map
-                rlayer = QgsRasterLayer(urlWithParams, wms[layerList[layer]].title, "wms")
-                if not rlayer.isValid(): # set service Errors to True if any layers can't be loaded
-                    serviceErrors = True
-                QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+				rlayer = QgsRasterLayer(urlWithParams, wms[layerList[layer]].title, "wms")
+				print (rlayer.extent().toString()) # TO DELETE
+				if not rlayer.isValid(): # set service Errors to True if any layers can't be loaded
+					serviceErrors = True
+				QgsMapLayerRegistry.instance().addMapLayer(rlayer)
                 
         elif servType == "WFS":
-        
-            service_url = service_url[:-36] # simple way of removing the GetCapabilities request
-            wfs = WebFeatureService(service_url)
-            layerList = list(wfs.contents) # creates a list of the names of each layer in the service
-            numLayers = len(layerList)
+			saveLayers(name,service_url[:-35],servType)
+			service_url = service_url[:-36] # simple way of removing the GetCapabilities request
+			wfs = WebFeatureService(service_url)
+			layerList = list(wfs.contents) # creates a list of the names of each layer in the service
+			numLayers = len(layerList)
             
-            for layer in range(numLayers):
+			for layer in range(numLayers):
                 # construct a WFS uri for the current layer
-                urlWithParams1 = str(service_url)+"?srsname=EPSG:"+str(EPSG_code)+"&typename="+layerList[layer]
-                urlWithParams2 = "&version="+wfs.identification.version+"&request=GetFeature&service=WFS"
-                urlWithParams = urlWithParams1 + urlWithParams2
+				urlWithParams1 = str(service_url)+"?srsname=EPSG:"+str(EPSG_code)+"&typename="+layerList[layer]
+				urlWithParams2 = "&version="+wfs.identification.version+"&request=GetFeature&service=WFS" 
+				urlWithParams = urlWithParams1 + urlWithParams2
+				
+				
                 # create the layer and add it to the map
-                vlayer = QgsVectorLayer(urlWithParams, wfs[layerList[layer]].title, "WFS")
-                if not vlayer.isValid(): # set service Errors to True if any layers can't be loaded
-                    serviceErrors = True                
-                QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+				vlayer = QgsVectorLayer(urlWithParams, wfs[layerList[layer]].title, "WFS")
+				if not vlayer.isValid(): # set service Errors to True if any layers can't be loaded
+					serviceErrors = True                
+				QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+				
                 
         elif servType == "WMTS": 
             """ CURRENTLY WMTS SERVICES ARE NOT INCLUDED IN THE LOADED SERVICES """
@@ -452,13 +596,13 @@ class CanadianWebServices:
             names = mapServerHelp.getNames(service_url)
             
             service_url = service_url[:-8] # gets rid of "?f=pjson"
-            
+            saveLayers(name,service_url,servType)
             counter = 0 # used as an index for the ids and names lists
             for id in ids:
                 # create the layer and add it to the map 
                 layer = QgsRasterLayer("url='" + service_url + "' layer='" + str(ids[counter]) + "'", names[counter], "arcgismapserver")
                 if not layer.isValid(): # set service Errors to True if any layers can't be loaded
-                    serviceErrors = True
+                    serviceErrors = True 
                 QgsMapLayerRegistry.instance().addMapLayer(layer)
                 counter = counter + 1
             
