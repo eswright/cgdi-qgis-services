@@ -100,24 +100,32 @@ def saveLayers(title,url,type):
 	CloseKey(key)
 	
 	##########################################################################################################################
+	val = ""
 	
-	if(type == "WMS"):
-		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-wms" # Value of base key
-		
-		try: # try block checks if the folder has already been created in the registry, if not creates it 
-			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		except:
-				temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
-				CreateKey(temp_key,"connections-wms")
-				host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		
-		try: # checks if service has already been added, if not adds it to registry with default settings
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-		except:
-			CreateKey(host_key,title) 
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE) 
-		
-		#Generating default settings for key 
+	if (type == "WMS"):
+		val = "connections-wms"
+	elif (type == "WFS"):
+		val = "connections-wfs" 
+	elif (type == "ESRI MapServer"):
+		val = "connections-arcgismapserver"
+	
+	keyVal = "Software\\QGIS\\QGIS2\\Qgis\\"+val
+	
+	try: # try block checks if the appropriate folder has already been created in the registry, if not  will create it 
+		host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+	except:
+		temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
+		CreateKey(temp_key,val)
+		host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
+	
+	try: # checks if service has already been added, if not adds it to registry with default settings
+		key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+	except:
+		CreateKey(host_key,title)
+		key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
+	
+	#Generating default settings for key 
+	if (type == "WMS"):
 		SetValueEx(key,"dpiMode",0,REG_DWORD,7)
 		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
 		SetValueEx(key,"ignoreGetFeatureInfoURI",0,REG_SZ,"false")
@@ -126,62 +134,22 @@ def saveLayers(title,url,type):
 		SetValueEx(key,"referer",0,REG_SZ,"")
 		SetValueEx(key,"smoothPixmap Transform",0,REG_SZ,"false")
 		SetValueEx(key,"url",0,REG_SZ,url)
-
-		# Closing connections to registry
-		CloseKey(key) 
-		CloseKey(host_key) 
+	
 	elif (type == "WFS"):
-		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-wfs"
-		
-		try: # try block checks if the folder has already been created in the registry, if not creates it 
-			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		except:
-			temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
-			CreateKey(temp_key,"connections-wfs")
-			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		
-		try:  # checks if service has already been added, if not adds it to registry with default settings
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-		except:
-			CreateKey(host_key,title)
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-		
-		#Generating default settings for key
 		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
 		SetValueEx(key,"invertAxisOrientation",0,REG_SZ,"false")
 		SetValueEx(key,"maxnumfeatures",0,REG_SZ,"")
 		SetValueEx(key,"referer",0,REG_SZ,"")
 		SetValueEx(key,"url",0,REG_SZ,url)
 		SetValueEx(key,"version",0,REG_SZ,"auto")
-		
-		# Closing connections to registry
-		CloseKey(key)
-		CloseKey(host_key)
 	
 	elif (type == "ESRI MapServer"):
-		keyVal = "Software\\QGIS\\QGIS2\\Qgis\\connections-arcgismapserver"
-		
-		try: # try block checks if the folder has already been created in the registry, if not creates it 
-			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		except:
-			temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
-			CreateKey(temp_key,"connections-arcgismapserver")
-
-			host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-		
-		try:  # checks if service has already been added, if not adds it to registry with default settings
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-		except:
-			CreateKey(host_key,title)
-			key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-		
-		#Generating default settings for key
 		SetValueEx(key,"referer",0,REG_SZ,"")
 		SetValueEx(key,"url",0,REG_SZ,url)
-		
-		# Closing connections to registry
-		CloseKey(key)
-		CloseKey(host_key)
+	
+	# Closing connections to registry
+	CloseKey(key) 
+	CloseKey(host_key) 
 
 
 class CanadianWebServices(object):
@@ -543,6 +511,7 @@ class CanadianWebServices(object):
         if servType == "WMS":
 
             service_url = service_url[:-36] # simple way of removing the GetCapabilities request
+	    saveLayers(name,service_url,servType)	
             wms = WebMapService(service_url) 
             layerList = list(wms.contents) # creates a list of the names of each layer in the service
             numLayers = len(layerList)
@@ -559,7 +528,7 @@ class CanadianWebServices(object):
                 QgsProject.instance().addMapLayer(rlayer)
                 
         elif servType == "WFS":
-        
+            saveLayers(name,service_url[:-35],servType)
             service_url = service_url[:-36] # simple way of removing the GetCapabilities request
             wfs = WebFeatureService(service_url)
             layerList = list(wfs.contents) # creates a list of the names of each layer in the service
@@ -592,7 +561,7 @@ class CanadianWebServices(object):
             names = mapServerHelp.getNames(service_url)
             
             service_url = service_url[:-8] # gets rid of "?f=pjson"
-            
+            saveLayers(name,service_url,servType)
             counter = 0 # used as an index for the ids and names lists
             for id in ids:
                 # create the layer and add it to the map 
