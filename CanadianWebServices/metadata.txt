@@ -1,5 +1,5 @@
 # This file contains metadata for your plugin. Since 
-# version 2.0 of QGIS this is the proper way to supply 
+# version 3.0 of QGIS this is the proper way to supply 
 # information about a plugin. The old method of 
 # embedding metadata in __init__.py will 
 # is no longer supported since version 2.0.
@@ -8,7 +8,7 @@
 
 [general]
 name=Canadian Web Services
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=This plugin provides easy access to many geospatial web services in the Canadian (.ca) domain.
 version=0.1
 author=Nathan Torrence
