@@ -3,11 +3,11 @@
 /***************************************************************************
 Helper functions to retrieve information about mapservers
 """
-import urllib, json
+import urllib.request, json
 
 # returns a list containing all layer IDs of a mapserver with url
 def getIDs(url):
-    response = urllib.urlopen(url)
+    response = urllib.request.urlopen(url)
     json_file = json.loads(response.read())
     
     layers = (json_file['layers'])
@@ -21,7 +21,7 @@ def getIDs(url):
 
 # returns a list containing all layer names of a mapserver with url    
 def getNames(url):
-    response = urllib.urlopen(url)
+    response = urllib.request.urlopen(url)
     json_file = json.loads(response.read())
     
     layers = (json_file['layers'])
@@ -30,6 +30,4 @@ def getNames(url):
     
     for layer in layers:
         name_list.append(layer['name'])
-        
-    return name_list
 
