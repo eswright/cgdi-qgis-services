@@ -30,4 +30,5 @@ def getNames(url):
     
     for layer in layers:
         name_list.append(layer['name'])
-
+        
+    return name_list
