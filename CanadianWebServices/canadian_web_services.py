@@ -10,7 +10,6 @@
 		copyright			: (C) 2018 by Nathan Torrence
 		email				: towence47@gmail.com
  ***************************************************************************/
-
 /***************************************************************************
  *																		 *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -50,11 +49,47 @@ from qgis.core import *
 import sys
 
 
-from winreg import *
 
 
+from configparser import ConfigParser
 
-
+'''
+	Helper function for method saveLayers that obtains how we should name our service (Created to counter-act the fact that many services in the plugin have the same name)
+	
+	@param title - title of the service
+	@param config - ConfigParser that contains a dictionary like structure that contains the configuration settings of QGIS
+	@param type - the type of service (ie WMS, WFS, ESRI MapServer)
+	@param counter - Amount of times we have run this helper function for the given service
+	
+	@return bool - that is false if a write is not necessary, and true if it is
+	@return title - the new title we should be using when writing to the configuration settings file.  
+'''
+def saveLayers_help(title,config,type,url,counter):
+	try:# Checks if the service exists
+		counter += 1
+		
+		if (type == "WMS"): # If block checks what type of service we are given and does the appropriate url check
+			check = config["qgis"]["connections-wms\\"+title+"\\url"] == url
+		elif (type == "WFS"):
+			check = config["qgis"]["connections-wfs\\"+title+"\\url"] == url
+		elif (type == "ESRI MapServer"):
+			check = config["qgis"]["connections-arcgismapserver\\"+title+"\\url"] == url
+		
+		if(check): # If we found the service 
+			return False,title 
+		else: # Otherwise 
+		
+			if (counter == 1): # If block that deals with naming conventions, if this is the first time we ran the function 
+				title += "_"+str(counter) 
+			else: # For every subsequent run of the function, remove what was previously added, and then add the new version Ex: Given title_1, strips the 1 and add 2 leaving us with : title_2  
+				title = title[:-(len(str(counter - 1)))]
+				title += str(counter)
+			return saveLayers_help(title,config,type,url,counter)
+	except: # If the service doesn't exist, that means we can now write to the configuration settings file without error
+		return True,title 
+		
+		
+		
 '''
 	Standalone function that saves services into the registry
 	@param title - The title of the service
@@ -62,102 +97,95 @@ from winreg import *
 	@param type - the type of service (ie WMS,WFS,ESRI MapServer)
 '''
 def saveLayers(title,url,type):
-
-	#Following block creates and sets authentication settings for chosen service 
-	##########################################################################################################################
-	val = "" # will hold path to key for service
-	try: # try block checks to see if the required keys have already been made
-		if(type == "WMS" or type == "WFS"):
-			val = "Software\\QGIS\\QGIS2\\Qgis\\"+type
-			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS) 
-		elif (type == "ESRI MapServer"):
-			val = "Software\\QGIS\\QGIS2\\Qgis\\ARCGISMAPSERVER"
-			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
-	except: # If the key has not been made already, create it and open the newly created key
-		temp = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS) # opens up the parent directory of the key we tried to make
-		if(type == "WMS" or type == "WFS"):
-			CreateKey(temp,type)
-			val = "Software\\QGIS\\QGIS2\\Qgis\\"+type
-			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
-		elif (type == "ESRI MapServer"):
-			CreateKey(temp,"ARCGISMAPSERVER")
-			val = "Software\\QGIS\\QGIS2\\Qgis\\ARCGISMAPSERVER"
-			security_key = OpenKey(HKEY_CURRENT_USER,val,0,KEY_ALL_ACCESS)
+	config = ConfigParser()
+	filepath = os.path.abspath(__file__)[:-59]+"QGIS\QGIS3.ini" # The path to the configuration file for QGIS
+	try: # Check to see if we have already opened the configuration file
+		config.read(filepath)
+	except: # Does nothing if we already have opened it
+		pass
 	
-	try: # Checks if key for service has already been created
-		key = OpenKey(HKEY_CURRENT_USER,val+"\\"+title,0,KEY_WRITE)
-	except: # if not create the key and open it, allowing us write using it 
-		CreateKey(security_key,title)
-		key = OpenKey(HKEY_CURRENT_USER,val+"\\"+title,0,KEY_WRITE)
-
-	# Setting values of services to default settings
-	SetValueEx(key,"authcfg",0,REG_SZ,"")
-	SetValueEx(key,"password",0,REG_SZ,"")
-	SetValueEx(key,"username",0,REG_SZ,"")
-	
-	# Closing connections to registry
-	CloseKey(security_key)
-	CloseKey(key)
-	
-	##########################################################################################################################
-	val = ""
-	
-	if (type == "WMS"):
-		val = "connections-wms"
+	# Configuration Settings 
+	if (type == "WMS"): 
+		base_settings = "connections-wms\\"+title+"\\"
+		base_security_settings = "WMS\\"+title+"\\"
+		settings = [base_settings+"url",base_settings+"ignoreAxisOrientation",base_settings+"invertAxisOrientation",
+		base_settings+"ignoreGetMapURI",base_settings+"smoothPixmapTransform",base_settings+"dpimode",base_settings+"referer",
+		base_settings+"ignoreGetFeatureInfoURI",base_security_settings+"username",base_security_settings+"password",base_security_settings+"authcfg"]
+		
+		settings_ans = [url,"false","false","false","false","7","","false","","",""]
 	elif (type == "WFS"):
-		val = "connections-wfs" 
-	elif (type == "ESRI MapServer"):
-		val = "connections-arcgismapserver"
-	
-	keyVal = "Software\\QGIS\\QGIS2\\Qgis\\"+val
-	
-	try: # try block checks if the appropriate folder has already been created in the registry, if not  will create it 
-		host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-	except:
-		temp_key = OpenKey(HKEY_CURRENT_USER,"Software\\QGIS\\QGIS2\\Qgis",0,KEY_ALL_ACCESS)
-		CreateKey(temp_key,val)
-		host_key = OpenKey(HKEY_CURRENT_USER,keyVal,0,KEY_ALL_ACCESS)
-	
-	try: # checks if service has already been added, if not adds it to registry with default settings
-		key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-	except:
-		CreateKey(host_key,title)
-		key = OpenKey(HKEY_CURRENT_USER,keyVal+"\\"+title,0,KEY_WRITE)
-	
-	#Generating default settings for key 
-	if (type == "WMS"):
-		SetValueEx(key,"dpiMode",0,REG_DWORD,7)
-		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
-		SetValueEx(key,"ignoreGetFeatureInfoURI",0,REG_SZ,"false")
-		SetValueEx(key,"ignoreGetMapURI",0,REG_SZ,"false")
-		SetValueEx(key,"invertAxisOrientation",0,REG_SZ,"false")
-		SetValueEx(key,"referer",0,REG_SZ,"")
-		SetValueEx(key,"smoothPixmap Transform",0,REG_SZ,"false")
-		SetValueEx(key,"url",0,REG_SZ,url)
-	
-	elif (type == "WFS"):
-		SetValueEx(key,"ignoreAxisOrientation",0,REG_SZ,"false")
-		SetValueEx(key,"invertAxisOrientation",0,REG_SZ,"false")
-		SetValueEx(key,"maxnumfeatures",0,REG_SZ,"")
-		SetValueEx(key,"referer",0,REG_SZ,"")
-		SetValueEx(key,"url",0,REG_SZ,url)
-		SetValueEx(key,"version",0,REG_SZ,"auto")
+		base_settings = "connections-wfs\\"+title+"\\"
+		base_security_settings = "WFS\\"+title+"\\"
+		settings = [base_settings+"url",base_settings+"ignoreAxisOrientation",base_settings+"invertAxisOrientation",
+		base_settings+"version",base_settings+"maxnumfeatures",base_security_settings+"username",
+		base_security_settings+"password",base_security_settings+"authcfg"]
+		
+		settings_ans = [url,"false","false","auto","","","",""]
 	
 	elif (type == "ESRI MapServer"):
-		SetValueEx(key,"referer",0,REG_SZ,"")
-		SetValueEx(key,"url",0,REG_SZ,url)
+		base_settings = "connections-arcgismapserver\\"+title+"\\"
+		base_security_settings = "arcgismapserver\\"+title+"\\"
+		settings = [base_settings+"url",base_security_settings+"username",base_security_settings+"password",
+		base_security_settings+"authcfg"]
+		
+		settings_ans = [url,"","",""]
+		
+	try: # try block checks if the service has been added
+		check = config["qgis"][base_settings+"url"] # Checks if the service has already been added
+		already_added = config["qgis"][base_settings+"url"] == url # checks to see if the urls match (Used since we might encounter services with the same name but different urls)
+	except: # If it hasn't add it 
+		for i in range (len(settings)):
+			config["qgis"][settings[i]] = settings_ans[i]
+		
+		with open(filepath,"w") as configfile:
+			config.write(configfile)
+		already_added = True
 	
-	# Closing connections to registry
-	CloseKey(key) 
-	CloseKey(host_key) 
-
+	if (not(already_added)): # If the service has still not been added (most common reason to be here is if there are multiple services with the same name (title))
+		already_added,title = saveLayers_help(title,config,type,url,0)
+		if(not(already_added)): # If the service has not already been added 
+			return # Do nothing
+		else: # Otherwise add it to the configuration file
+			
+			# Configuration Settings
+			if (type == "WMS"): 
+	
+				base_settings = "connections-wms\\"+title+"\\"
+				base_security_settings = "WMS\\"+title+"\\"
+				settings = [base_settings+"url",base_settings+"ignoreAxisOrientation",base_settings+"invertAxisOrientation",
+				base_settings+"ignoreGetMapURI",base_settings+"smoothPixmapTransform",base_settings+"dpimode",base_settings+"referer",
+				base_settings+"ignoreGetFeatureInfoURI",base_security_settings+"username",base_security_settings+"password",base_security_settings+"authcfg"]
+				
+				settings_ans = [url,"false","false","false","false","7","","false","","",""]
+			elif (type == "WFS"):
+				base_settings = "connections-wfs\\"+title+"\\"
+				base_security_settings = "WFS\\"+title+"\\"
+				settings = [base_settings+"url",base_settings+"ignoreAxisOrientation",base_settings+"invertAxisOrientation",
+				base_settings+"version",base_settings+"maxnumfeatures",base_security_settings+"username",
+				base_security_settings+"password",base_security_settings+"authcfg"]
+				
+				settings_ans = [url,"false","false","auto","","","",""]
+			
+			elif (type == "ESRI MapServer"):
+				base_settings = "connections-arcgismapserver\\"+title+"\\"
+				base_security_settings = "arcgismapserver\\"+title+"\\"
+				settings = [base_settings+"url",base_security_settings+"username",base_security_settings+"password",
+				base_security_settings+"authcfg"]
+				
+				settings_ans = [url,"","",""]
+			
+			for i in range (len(settings)): # Sets information into config
+				config["qgis"][settings[i]] = settings_ans[i]
+			
+			with open(filepath,"w") as configfile: # writes into file 
+				config.write(configfile)	
+	
 
 class CanadianWebServices(object):
 	"""QGIS Plugin Implementation."""
 
 	def __init__(self, iface):
 		"""Constructor.
-
 		:param iface: An interface instance that will be passed to this class
 			which provides the hook by which you can manipulate the QGIS
 			application at run time.
@@ -200,12 +228,9 @@ class CanadianWebServices(object):
 	# noinspection PyMethodMayBeStatic
 	def tr(self, message):
 		"""Get the translation for a string using Qt translation API.
-
 		We implement this ourselves since we do not inherit QObject.
-
 		:param message: String for translation.
 		:type message: str, QString
-
 		:returns: Translated version of message.
 		:rtype: QString
 		"""
@@ -225,39 +250,29 @@ class CanadianWebServices(object):
 		whats_this=None,
 		parent=None):
 		"""Add a toolbar icon to the toolbar.
-
 		:param icon_path: Path to the icon for this action. Can be a resource
 			path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
 		:type icon_path: str
-
 		:param text: Text that should be shown in menu items for this action.
 		:type text: str
-
 		:param callback: Function to be called when the action is triggered.
 		:type callback: function
-
 		:param enabled_flag: A flag indicating if the action should be enabled
 			by default. Defaults to True.
 		:type enabled_flag: bool
-
 		:param add_to_menu: Flag indicating whether the action should also
 			be added to the menu. Defaults to True.
 		:type add_to_menu: bool
-
 		:param add_to_toolbar: Flag indicating whether the action should also
 			be added to the toolbar. Defaults to True.
 		:type add_to_toolbar: bool
-
 		:param status_tip: Optional text to show in a popup when mouse pointer
 			hovers over the action.
 		:type status_tip: str
-
 		:param parent: Parent widget for the new action. Defaults None.
 		:type parent: QWidget
-
 		:param whats_this: Optional text to show in the status bar when the
 			mouse pointer hovers over the action.
-
 		:returns: The action that was created. Note that the action is also
 			added to self.actions list.
 		:rtype: QAction
@@ -511,7 +526,7 @@ class CanadianWebServices(object):
 		if servType == "WMS":
 
 			service_url = service_url[:-36] # simple way of removing the GetCapabilities request
-		saveLayers(name,service_url,servType)	
+			saveLayers(name,service_url,servType)	
 			wms = WebMapService(service_url) 
 			layerList = list(wms.contents) # creates a list of the names of each layer in the service
 			numLayers = len(layerList)
