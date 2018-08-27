@@ -16,7 +16,7 @@ email=towence47@gmail.com
 
 about=This plugin provides easy access to many geospatial web services in the Canadian (.ca) domain.
 
-tracker=http://bugs
+tracker=https://github.com/eswright/cgdi-qgis-services/issues
 repository=https://github.com/eswright/cgdi-qgis-services
 # End of mandatory metadata
 
@@ -26,9 +26,9 @@ repository=https://github.com/eswright/cgdi-qgis-services
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python
+tags=Python,Canada,WMS,WFS,ESRI MapServer,Web Services
 
-homepage=http://homepage
+homepage=https://github.com/eswright/cgdi-qgis-services
 category=Web
 icon=icon.png
 # experimental flag
