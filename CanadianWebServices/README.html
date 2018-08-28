@@ -1,42 +1,28 @@
 <html>
 <body>
-<h3>Plugin Builder Results</h3>
+<h3>Installation Instructions</h3>
 
-Congratulations! You just built a plugin for QGIS!<br/><br />
 
 <div id='help' style='font-size:.9em;'>
-Your plugin <b>CanadianWebServices</b> was created in:<br>
-&nbsp;&nbsp;<b>C:\Users\ntorrenc\.qgis2\python\plugins\CanadianWebServices</b>
-<p>
-Your QGIS plugin directory is located at:<br>
-&nbsp;&nbsp;<b>C:/Users/ntorrenc/.qgis2/python/plugins</b>
-<p>
-<h3>What's Next</h3>
+<h3>Steps:</h3>
 <ol>
-    <li>In your plugin directory, compile the resources file using pyrcc4 (simply run <b>make</b> if you have automake or use <b>pb_tool</b>)
-    <li>Test the generated sources using <b>make test</b> (or run tests from your IDE)
-    <li>Copy the entire directory containing your new plugin to the QGIS plugin directory (see Notes below)
-    <li>Test the plugin by enabling it in the QGIS plugin manager
-    <li>Customize it by editing the implementation file <b>canadian_web_services.py</b>
-    <li>Create your own custom icon, replacing the default <b>icon.png</b>
-    <li>Modify your user interface by opening <b>canadian_web_services_dialog_base.ui</b> in Qt Designer
+    <li>Download files found at <a href="https://github.com/eswright/cgdi-qgis-services">https://github.com/eswright/cgdi-qgis-services</a>
+    <li>Convert the folder named CanadianWebServices into a zip
+    <li>Open up Qgis Desktop 3.0 or higher
+    <li>Go to <b>Plugins > Manage and Install Plugins... > Install from ZIP </b>
+    <li>Choose the newly created zip file, and click install
+    <li>Once installed, ensure that you have checked <b>Show also experimental plugins</b> found at <b>Plugins > Manage and Install Plugins... > Settings</b>
+    <li>Finally, go to <b>Plugins > Manage and Install Plugins... > Installed </b> and make sure <b>Canadian Web Services</b> is checked
 </ol>
-Notes:
+
+<h3>Notes:</h3>
 <ul>
-    <li>You can use the <b>Makefile</b> to compile and deploy when you
-        make changes. This requires GNU make (gmake). The Makefile is ready to use, however you 
-        will have to edit it to add addional Python source files, dialogs, and translations.
-    <li>You can also use <b>pb_tool</b> to compile and deploy your plugin. Tweak the <i>pb_tool.cfg</i> file included with your plugin as you add files. Install <b>pb_tool</b> using 
-        <i>pip</i> or <i>easy_install</i>. See <a href="http://loc8.cc/pb_tool">http://loc8.cc/pb_tool</a> for more information.
+    <li>You can find the plugin in: 
+        C:\Users\<b>USER</b>\AppData\Roaming\QGIS\QGIS3\profiles\python\plugins\CanadianWebServices (where <b>USER</b> is your user profile name)
+	
+    <li>Once this plugin is added to the official Qgis repository, you can ignore the steps shown above, and install this plugin as you would with any other 
 </ul>
 </div>
-<div style='font-size:.9em;'>
-<p>
-For information on writing PyQGIS code, see <a href="http://loc8.cc/pyqgis_resources">http://loc8.cc/pyqgis_resources</a> for a list of resources.
-</p>
-</div>
-<p>
-&copy;2011-2018 GeoApt LLC - geoapt.com 
-</p>
+
 </body>
 </html>
