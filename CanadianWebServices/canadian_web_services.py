@@ -231,7 +231,7 @@ class CanadianWebServices:
 		self.services = self.loadServiceList()
 		if self.works == True: # only sorts when the url worked
 			self.services = self.sortServices(self.services) # initialize and sort the services
-			self.shownServices = self.services # will change when serch criteria change to allow for the selected dataset to be found by row number		
+			self.shownServices = self.services # will change when search criteria change to allow for the selected dataset to be found by row number		
 
 	# noinspection PyMethodMayBeStatic
 	def tr(self, message):
@@ -356,21 +356,32 @@ class CanadianWebServices:
 		del self.toolbar
 
 	# getSelectedService(self) returns the web service object of the currently selected service in the table
-	# getSelectedService: CWS -> Service
+	# getSelectedService: CWS -> [Services]
 	def getSelectedService(self):
 		"""Gets the selected dataset from the table"""
-		# get the number of the selected row:
-		rowNum = self.dlg.tableWidget.currentRow()
+
+		
+		rowNums = []
+		selected = self.dlg.tableWidget.selectedItems()
+		if(len(selected) > 0):
+			for i in range(0,len(selected),4):
+				rowNums.append(self.dlg.tableWidget.row(selected[i]))
+		
+		selectedServices = []
+		for row in rowNums:
+			selectedServices.append(self.shownServices[row])
+		
 		# return the webServiceObj from the datasets list for that row
-		return self.shownServices[rowNum]
+		return selectedServices
 	
 	# updateDesc(self) updates the description box with the name and description of the selected service
 	# updateDesc: CWS -> None
 	def updateDesc(self):
 		# get the selected dataset:
 		serv = self.getSelectedService()
-		desc = serv.desc
-		name = serv.name
+		#Gets the name of the last clicked service
+		desc = serv[-1].desc if len(serv)> 0 else ""
+		name = serv[-1].name if len(serv)>0 else ""
 	   
 		# update the description:
 		self.dlg.textEdit.clear()
@@ -454,7 +465,8 @@ class CanadianWebServices:
 		
 		# set event behaviors for the table
 		self.dlg.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
-		self.dlg.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)	
+		self.dlg.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+		self.dlg.tableWidget.setSelectionMode(QAbstractItemView.MultiSelection)
 		
 	# fill_table(self, serviceList): fills tableWidget with the services in serviceList
 	# fill_table: CWS (listof Service) -> None
@@ -536,85 +548,89 @@ class CanadianWebServices:
 	#					   is not valid, a warning message will be displayed to the user
 	# loadWebService: CWS -> None
 	def loadWebService(self):
-		serv = self.getSelectedService()
-		
-		name = serv.name
-		servType = serv.serviceType
-		service_url = serv.url
 		
 		# default projection, possibly changed later:
 		EPSG_code = '4326'
-		
-		serviceErrors = False # will become true if any of the layers cannot load in
-		
-		if servType == "WMS":
+	
+	
+		services = self.getSelectedService()
+		for serv in services:
+			name = serv.name
+			servType = serv.serviceType
+			service_url = serv.url
 			
-			service_url = service_url[:-36] # simple way of removing the GetCapabilities request
-			saveLayers(name,service_url,servType)
-			wms = WebMapService(service_url) 
-			layerList = list(wms.contents) # creates a list of the names of each layer in the service
-			numLayers = len(layerList)
+
 			
-			for layer in range(numLayers):
-				# construct a WMS url for the current layer
-				urlWithParams1 = 'url='+str(service_url)+'&format=image/png&layers='
-				urlWithParams2 = '&styles=&crs=EPSG:'+str(EPSG_code)
-				urlWithParams = urlWithParams1 + layerList[layer] + urlWithParams2
-				# create the layer and add it to the map
-				rlayer = QgsRasterLayer(urlWithParams, wms[layerList[layer]].title, "wms")
-				if not rlayer.isValid(): # set service Errors to True if any layers can't be loaded
-					serviceErrors = True
-				QgsMapLayerRegistry.instance().addMapLayer(rlayer)
-				
-		elif servType == "WFS":
-			saveLayers(name,service_url[:-35],servType)
-			service_url = service_url[:-36] # simple way of removing the GetCapabilities request
-			wfs = WebFeatureService(service_url)
-			layerList = list(wfs.contents) # creates a list of the names of each layer in the service
-			numLayers = len(layerList)
+			serviceErrors = False # will become true if any of the layers cannot load in
 			
-			for layer in range(numLayers):
-				# construct a WFS uri for the current layer
-				urlWithParams1 = str(service_url)+"?srsname=EPSG:"+str(EPSG_code)+"&typename="+layerList[layer]
-				urlWithParams2 = "&version="+wfs.identification.version+"&request=GetFeature&service=WFS" 
-				urlWithParams = urlWithParams1 + urlWithParams2
+			if servType == "WMS":
 				
+				service_url = service_url[:-36] # simple way of removing the GetCapabilities request
+				saveLayers(name,service_url,servType)
+				wms = WebMapService(service_url) 
+				layerList = list(wms.contents) # creates a list of the names of each layer in the service
+				numLayers = len(layerList)
 				
-				# create the layer and add it to the map
-				vlayer = QgsVectorLayer(urlWithParams, wfs[layerList[layer]].title, "WFS")
-				if not vlayer.isValid(): # set service Errors to True if any layers can't be loaded
-					serviceErrors = True				
-				QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+				for layer in range(numLayers):
+					# construct a WMS url for the current layer
+					urlWithParams1 = 'url='+str(service_url)+'&format=image/png&layers='
+					urlWithParams2 = '&styles=&crs=EPSG:'+str(EPSG_code)
+					urlWithParams = urlWithParams1 + layerList[layer] + urlWithParams2
+					# create the layer and add it to the map
+					rlayer = QgsRasterLayer(urlWithParams, wms[layerList[layer]].title, "wms")
+					if not rlayer.isValid(): # set service Errors to True if any layers can't be loaded
+						serviceErrors = True
+					QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+					
+			elif servType == "WFS":
+				saveLayers(name,service_url[:-35],servType)
+				service_url = service_url[:-36] # simple way of removing the GetCapabilities request
+				wfs = WebFeatureService(service_url)
+				layerList = list(wfs.contents) # creates a list of the names of each layer in the service
+				numLayers = len(layerList)
 				
+				for layer in range(numLayers):
+					# construct a WFS uri for the current layer
+					urlWithParams1 = str(service_url)+"?srsname=EPSG:"+str(EPSG_code)+"&typename="+layerList[layer]
+					urlWithParams2 = "&version="+wfs.identification.version+"&request=GetFeature&service=WFS" 
+					urlWithParams = urlWithParams1 + urlWithParams2
+					
+					
+					# create the layer and add it to the map
+					vlayer = QgsVectorLayer(urlWithParams, wfs[layerList[layer]].title, "WFS")
+					if not vlayer.isValid(): # set service Errors to True if any layers can't be loaded
+						serviceErrors = True				
+					QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+					
+					
+			elif servType == "WMTS": 
+				""" CURRENTLY WMTS SERVICES ARE NOT INCLUDED IN THE LOADED SERVICES """
+				# to enable WMTS, remove the WMTS part of the if statement in loadServiceList
+				service_url = service_url[:-37] # simple way of removing the GetCapabilities request
+						   
+				wmts = WebMapTileService(service_url)	 
+				layerList = list(wmts.contents)
+				numLayers = len(layerList)
+	 
+			# requires that the url ends with "?f=pjson"
+			elif servType == "ESRI MapServer":
+				# grab lists of the layer IDs and Names
+				ids = mapServerHelp.getIDs(service_url)
+				names = mapServerHelp.getNames(service_url)
 				
-		elif servType == "WMTS": 
-			""" CURRENTLY WMTS SERVICES ARE NOT INCLUDED IN THE LOADED SERVICES """
-			# to enable WMTS, remove the WMTS part of the if statement in loadServiceList
-			service_url = service_url[:-37] # simple way of removing the GetCapabilities request
-					   
-			wmts = WebMapTileService(service_url)	 
-			layerList = list(wmts.contents)
-			numLayers = len(layerList)
- 
-		# requires that the url ends with "?f=pjson"
-		elif servType == "ESRI MapServer":
-			# grab lists of the layer IDs and Names
-			ids = mapServerHelp.getIDs(service_url)
-			names = mapServerHelp.getNames(service_url)
-			
-			service_url = service_url[:-8] # gets rid of "?f=pjson"
-			saveLayers(name,service_url,servType)
-			counter = 0 # used as an index for the ids and names lists
-			for id in ids:
-				# create the layer and add it to the map 
-				layer = QgsRasterLayer("url='" + service_url + "' layer='" + str(ids[counter]) + "'", names[counter], "arcgismapserver")
-				if not layer.isValid(): # set service Errors to True if any layers can't be loaded
-					serviceErrors = True 
-				QgsMapLayerRegistry.instance().addMapLayer(layer)
-				counter = counter + 1
-			
-		if serviceErrors == True: # display an error message when one or more layers could not be loaded
-			QMessageBox.warning(None, "Error Loading Layer(s)", "One or more of the layers from this service could not be loaded.")	
+				service_url = service_url[:-8] # gets rid of "?f=pjson"
+				saveLayers(name,service_url,servType)
+				counter = 0 # used as an index for the ids and names lists
+				for id in ids:
+					# create the layer and add it to the map 
+					layer = QgsRasterLayer("url='" + service_url + "' layer='" + str(ids[counter]) + "'", names[counter], "arcgismapserver")
+					if not layer.isValid(): # set service Errors to True if any layers can't be loaded
+						serviceErrors = True 
+					QgsMapLayerRegistry.instance().addMapLayer(layer)
+					counter = counter + 1
+				
+			if serviceErrors == True: # display an error message when one or more layers could not be loaded
+				QMessageBox.warning(None, "Error Loading Layer(s)", "One or more of the layers from this service could not be loaded.")	
 	
 	# openInfo(self) opens the info dialog
 	# openInfo: CWS -> None
