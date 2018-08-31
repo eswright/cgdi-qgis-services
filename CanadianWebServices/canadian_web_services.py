@@ -453,7 +453,8 @@ class CanadianWebServices(object):
 		# set event behaviors for the table
 		self.dlg.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
 		self.dlg.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-		self.dlg.tableWidget.setSelectionMode(QAbstractItemView.MultiSelection)
+		#self.dlg.tableWidget.setSelectionMode(QAbstractItemView.MultiSelection) ************************* OLD SELECTION METHOD ************** CHOOSE WHAT YOU PREFER
+		self.dlg.tableWidget.setSelectionMode(QAbstractItemView.ExtendedSelection) # IF you uncomment the above line, comment this line, otherwise no changes will be seen
 		
 	# fill_table(self, serviceList): fills tableWidget with the services in serviceList
 	# fill_table: CWS (listof Service) -> None
