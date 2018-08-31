@@ -466,7 +466,9 @@ class CanadianWebServices:
 		# set event behaviors for the table
 		self.dlg.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
 		self.dlg.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-		self.dlg.tableWidget.setSelectionMode(QAbstractItemView.MultiSelection)
+		self.dlg.tableWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		
+		#self.dlg.tableWidget.setSelectionMode(QAbstractItemView.MultiSelection) This was the old way to achieve MultiSelection**********************DELETE***********
 		
 	# fill_table(self, serviceList): fills tableWidget with the services in serviceList
 	# fill_table: CWS (listof Service) -> None
