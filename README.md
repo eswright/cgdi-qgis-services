@@ -6,6 +6,7 @@ This plugin is a aid to viewing Canadian web services (see below for what types)
 
 Discovery of relevant datasets remains a key barrier to the uptake of use of GIS for decision-making.  The GeoConnections program at Natural Resources Canada is working to address this.
 Fundamental to this is encouraging the use of standards and completion of accurate metadata.
+This plugin may reveal useability issues that may exist with some services and service providers.
 
 ## Usage
 
