@@ -1,4 +1,4 @@
-# cgdi-qgis-services
+# Canadian Web Services
 
 ## Synopsis
 
