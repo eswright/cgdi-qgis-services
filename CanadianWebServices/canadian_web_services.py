@@ -416,8 +416,13 @@ class CanadianWebServices(object):
 				numLayers = len(layers)	
 				# get availability times and calculate a weekly up time percentage
 				availability = service['availability']
-				upWeek = float((availability['week'])['hoursUp'])
-				downWeek = float((availability['week'])['hoursDown'])
+				try:
+					upWeek = float((availability['week'])['hoursUp'])
+					downWeek = float((availability['week'])['hoursDown'])
+				except (TypeError): # Deals with NoneType Errors
+					upWeek = 0 # Setting these to arbitrry values, so that they don't get picked up by the plugin in the proceeding step
+					downWeek = 0 
+				
 				perAvailable = self.percentUp(upWeek, downWeek) # to only include services with a high percent up time
 				serviceType = service['serviceInterfaceType'] # to exclude WMTS services from being included
 				if service['title'] != "" and numLayers <= 20 and perAvailable >= 90 and serviceType != "WMTS": #IMPORTANT*****************************************************************
