@@ -13,8 +13,6 @@ This plugin may reveal useability issues that may exist with some services and s
 =======
 *see README.md within the plugin for criteria for service inclusion.
 
->>>>>>> 91975e8a3ea24239ecfae68290481c6623f739db
-
 
 ## License
 
