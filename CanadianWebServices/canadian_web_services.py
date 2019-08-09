@@ -449,7 +449,7 @@ class CanadianWebServices(object):
 		self.dlg.tableWidget.setColumnWidth(1, 110)
 		self.dlg.tableWidget.setColumnWidth(2, 158)
 		self.dlg.tableWidget.setColumnWidth(3, 60)
-		self.dlg.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+		self.dlg.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 		self.dlg.tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 		
 		#self.dlg.tableWidget.resizeRowsToContents()
