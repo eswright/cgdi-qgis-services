@@ -231,7 +231,9 @@ class CanadianWebServices(object):
 		self.services = self.loadServiceList()
 		if self.works == True: # only sorts when the url worked
 			self.services = self.sortServices(self.services) # initialize and sort the services
-			self.shownServices = self.services # will change when serch criteria change to allow for the selected dataset to be found by row number		
+			self.shownServices = self.services # will change when serch criteria change to allow for the selected dataset to be found by row number	
+		#enlable hidpi scaling
+		QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
 	# noinspection PyMethodMayBeStatic
 	def tr(self, message):
