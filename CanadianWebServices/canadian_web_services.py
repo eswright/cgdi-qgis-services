@@ -231,7 +231,9 @@ class CanadianWebServices(object):
 		self.services = self.loadServiceList()
 		if self.works == True: # only sorts when the url worked
 			self.services = self.sortServices(self.services) # initialize and sort the services
-			self.shownServices = self.services # will change when serch criteria change to allow for the selected dataset to be found by row number		
+			self.shownServices = self.services # will change when serch criteria change to allow for the selected dataset to be found by row number	
+		#enlable hidpi scaling
+		QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
 	# noinspection PyMethodMayBeStatic
 	def tr(self, message):
@@ -445,12 +447,11 @@ class CanadianWebServices(object):
 	# setTableWidgetBehaviour(self) defines how tableWidget will behave
 	# setTableWidgetBehaviour: CWS -> None
 	def setTableWidgetBehaviour(self):
-		# set row and column sizes and lock them
-		self.dlg.tableWidget.setColumnWidth(0, 110)
+		self.dlg.tableWidget.setColumnWidth(0, 185)
 		self.dlg.tableWidget.setColumnWidth(1, 110)
-		self.dlg.tableWidget.setColumnWidth(2, 207)
-		self.dlg.tableWidget.setColumnWidth(3, 86)
-		self.dlg.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
+		self.dlg.tableWidget.setColumnWidth(2, 158)
+		self.dlg.tableWidget.setColumnWidth(3, 60)
+		self.dlg.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 		self.dlg.tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 		
 		#self.dlg.tableWidget.resizeRowsToContents()
