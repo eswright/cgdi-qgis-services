@@ -10,7 +10,7 @@
 name=Canadian Web Services
 qgisMinimumVersion=3.0
 description=This plugin provides easy access to many geospatial web services in the Canadian (.ca) domain.
-version=0.1
+version=1.1
 author=Nathan Torrence
 email=towence47@gmail.com
 
@@ -31,7 +31,7 @@ tags=Python,Canada,WMS,WFS,ESRI MapServer,Web Services
 homepage=https://github.com/eswright/cgdi-qgis-services
 category=Web
 icon=icon.png
-# experimental flag
+experimental flag
 experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
