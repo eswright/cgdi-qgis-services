@@ -31,8 +31,8 @@ tags=Python,Canada,WMS,WFS,ESRI MapServer,Web Services
 homepage=https://github.com/eswright/cgdi-qgis-services
 category=Web
 icon=icon.png
-experimental flag
-experimental=True
+# experimental flag
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
