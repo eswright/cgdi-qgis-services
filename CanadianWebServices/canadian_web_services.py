@@ -395,7 +395,7 @@ class CanadianWebServices(object):
 	# loadServiceList: CWS -> (listof Service) OR (listof None)
 	# Modifies: When url can't be reached, self.works is set to false
 	def loadServiceList(self):
-		url = 'http://directory.spatineo.com/nrcan-harvest/json/v1/latest.json'
+		url = 'https://directory.spatineo.com/nrcan-harvest/json/v1/latest.json'
 		response = requests.get(url)
 		
 		try:
