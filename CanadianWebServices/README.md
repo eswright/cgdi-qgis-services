@@ -5,6 +5,8 @@ Fundamental to this is encouraging the use of standards and completion of accura
 This plugin is an aid to viewing Canadian web services (see below for what types) that are open and available.  It currently is populated with a list of services harvested weekly from the .ca landscape.
 It then allows the user to efficiently add all layers of selected services* and retain the service connection in the user profile for later use.
 
+This code is provided under MIT License.  A short and simple permissive license with conditions only requiring preservation of copyright and license notices.
+
 ## Usage
 
 1. Open Plugin.\**
@@ -15,13 +17,9 @@ It then allows the user to efficiently add all layers of selected services* and 
 
 ### Installation:
 
-1.  Download files found at [https://github.com/eswright/cgdi-qgis-services](https://github.com/eswright/cgdi-qgis-services)
-2.  Convert the folder named CanadianWebServices into a zip
-3.  Open up Qgis Desktop 3.0 or higher
-4.  From the menu go to **Plugins > Manage and Install Plugins... > Install from ZIP**
-5.  Choose the newly created zip file, and click install***
-6.  Once installed, ensure that you have checked **Show also experimental plugins** found at **Plugins > Manage and Install Plugins... > Settings**
-7.  Finally, go to **Plugins > Manage and Install Plugins... > Installed** and make sure **Canadian Web Services** is checked
+1.  The CanadianWebServices plugins can be installed directly from the QGIS Plugin Manager within the QGIS application, provided you enable the display of 'experimental' plugins within 'settings'
+2.  Alternatively, it can be downloaded from the [official respository](https://plugins.qgis.org/plugins/) or GitHub
+
 
 ### Notes:
 
@@ -29,20 +27,19 @@ It then allows the user to efficiently add all layers of selected services* and 
 
 \**  You can find the plugin in: C:\Users\**USER**\AppData\Roaming\QGIS\QGIS3\profiles\python\plugins\CanadianWebServices (where **USER** is your user profile name)
 
-\*** Once this plugin is added to the official Qgis repository ( in the experimental category), you can ignore the steps shown above, and install this plugin as you would with any other experimental plugin.
+
+## Help us
+
+Please submit bug reports using the [QGIS bug tracker](https://github.com/eswright/cgdi-qgis-services/issues).
+
+
+## Contribute
+
+CanadianWebServices is on GitHub at [https://github.com/eswright/cgdi-qgis-services/tree/master/CanadianWebServices](https://github.com/eswright/cgdi-qgis-services/tree/master/CanadianWebServices). If you wish to contribute patches you can [fork the project](https://help.github.com/forking/), make your changes, commit to your repository, and then [create a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/). The development team can then review your contribution and commit it upstream as appropriate.
+
+If you commit a new feature, add [FEATURE] to your commit message AND give a clear description of the new feature. 
 
 
 
-
-## Contributors
-Nathan Torrence
-Aayush Dobriyal
-Eric Wright
-
-
-
-## License
-
-MIT
 ```
 ```
