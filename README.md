@@ -17,6 +17,6 @@ This plugin may reveal useability issues that may exist with some services and s
 ## License
 
 ```
-This code is licensed under MIT
+This code is provided under MIT License.  A short and simple permissive license with conditions only requiring preservation of copyright and license notices.
 ```
 
