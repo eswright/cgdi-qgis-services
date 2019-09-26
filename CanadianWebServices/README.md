@@ -39,7 +39,8 @@ CanadianWebServices is on GitHub at [https://github.com/eswright/cgdi-qgis-servi
 
 If you commit a new feature, add [FEATURE] to your commit message AND give a clear description of the new feature. 
 
-
+## License
+This code is provided under MIT License.  A short and simple permissive license with conditions only requiring preservation of copyright and license notices.
 
 ```
 ```
