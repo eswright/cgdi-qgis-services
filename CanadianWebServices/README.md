@@ -17,7 +17,7 @@ This code is provided under MIT License.  A short and simple permissive license 
 
 ### Installation:
 
-1.  The CanadianWebServices plugins can be installed directly from the QGIS Plugin Manager within the QGIS application, provided you enable the display of 'experimental' plugins within 'settings'
+1.  The CanadianWebServices plugins can be installed directly from the QGIS Plugin Manager within the QGIS application.
 2.  Alternatively, it can be downloaded from the [official respository](https://plugins.qgis.org/plugins/) or GitHub
 
 
